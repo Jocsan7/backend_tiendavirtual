@@ -1,0 +1,25 @@
+{
+  "name": "tienda-virtual",
+  "version": "1.0.0",
+  "description": "Creación de APIREST para una tienda virtual",
+  "homepage": "https://github.com/Jocsan7/backend_tiendavirtual#readme",
+  "bugs": {
+    "url": "https://github.com/Jocsan7/backend_tiendavirtual/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jocsan7/backend_tiendavirtual.git"
+  },
+  "license": "ISC",
+  "author": "Bonilla Galindo A. Jocsan",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "express": "^5.2.1",
+    "morgan": "^1.10.1"
+  }
+}
