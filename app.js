@@ -1,8 +1,8 @@
-const express = requiere('express');
-const logger = requiere('morgan');
-const bodyParser = requiere('body-parser');
+const express = require('express');
+const logger = require('morgan');
+const bodyParser = require('body-parser');
 
-const http = requiere('http');
+const http = require('http');
 const app = express();
 
 app.use(logger('dev'));
@@ -13,6 +13,9 @@ app.get('/',(req, res)=> res.status(200).send({
     menssage: 'Bienvenido a mi API de tienda virtual',
 }));
 
-const port = parseint(process.env.PORT, 10) || 8000;
+const port = parseInt(process.env.PORT, 10) || 8000;
 app.set('port', port);
+
+const server = http.createServer(app);
+server.listen(port);
 module.exports = app;
