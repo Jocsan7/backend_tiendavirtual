@@ -2,12 +2,22 @@ const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 const http = require('http');
+const mysql = require('mysql2/promise');
 
 const categoriaController = require('./Controlers/controler_categoria');
 const usuarioController = require('./Controlers/controler_usuario');
 const productoController = require('./Controlers/controler_producto');
 const carritosController = require('./Controlers/controler_carritos');
 const carritoDetalleController = require('./Controlers/controler_carrito_detalle');
+const {
+  tbc_categorias,
+  tbc_usuario,
+  tbc_producto,
+  tbc_carritos,
+  tbc_carrito_detalle,
+  sequelize
+} = require('./models');
+const config = require('./config/config')[process.env.NODE_ENV || 'development'];
 
 const app = express();
 
@@ -15,11 +25,94 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.get('/', (req, res) =>
+app.get('/health', (_, res) =>
   res.status(200).send({
-    menssage: 'Bienvenido a mi API de tienda virtual'
+    mensaje: 'Servidor activo'
   })
 );
+
+async function obtenerDatosTablas() {
+  const [categorias, usuarios, productos, carritos, carritoDetalles] = await Promise.all([
+    tbc_categorias.findAll(),
+    tbc_usuario.findAll(),
+    tbc_producto.findAll({
+      include: [
+        {
+          model: tbc_categorias,
+          as: 'categoria'
+        }
+      ]
+    }),
+    tbc_carritos.findAll({
+      include: [
+        {
+          model: tbc_usuario,
+          as: 'usuario'
+        }
+      ]
+    }),
+    tbc_carrito_detalle.findAll({
+      include: [
+        {
+          model: tbc_carritos,
+          as: 'carrito'
+        },
+        {
+          model: tbc_producto,
+          as: 'producto'
+        }
+      ]
+    })
+  ]);
+
+  return {
+    categorias,
+    usuarios,
+    productos,
+    carritos,
+    carrito_detalles: carritoDetalles
+  };
+}
+
+app.get('/', async (_, res) => {
+  try {
+    const datos = await obtenerDatosTablas();
+
+    return res.status(200).send({
+      mensaje: 'Bienvenido a mi API de tienda virtual',
+      endpoints_principales: [
+        '/categorias',
+        '/usuarios',
+        '/productos',
+        '/carritos',
+        '/carrito-detalles',
+        '/datos-tablas'
+      ],
+      datos
+    });
+  } catch (error) {
+    return res.status(500).send({
+      mensaje: 'No se pudieron obtener los datos de las tablas',
+      error: error.message,
+      sugerencia:
+        'Revisa la configuracion de MySQL en tu archivo .env (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME).'
+    });
+  }
+});
+
+app.get('/datos-tablas', async (_, res) => {
+  try {
+    const datos = await obtenerDatosTablas();
+    return res.status(200).send(datos);
+  } catch (error) {
+    return res.status(500).send({
+      mensaje: 'No se pudieron obtener los datos de las tablas',
+      error: error.message,
+      sugerencia:
+        'Revisa la configuracion de MySQL en tu archivo .env (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME).'
+    });
+  }
+});
 
 app.post('/categorias', categoriaController.create);
 app.get('/categorias', categoriaController.list);
@@ -60,6 +153,35 @@ const port = parseInt(process.env.PORT, 10) || 8000;
 app.set('port', port);
 
 const server = http.createServer(app);
-server.listen(port);
+
+async function inicializarBaseDeDatos() {
+  const conexion = await mysql.createConnection({
+    host: config.host,
+    port: config.port,
+    user: config.username,
+    password: config.password
+  });
+
+  await conexion.query(
+    `CREATE DATABASE IF NOT EXISTS \`${config.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+  );
+  await conexion.end();
+
+  await sequelize.authenticate();
+  await sequelize.sync();
+}
+
+async function iniciarServidor() {
+  try {
+    await inicializarBaseDeDatos();
+    server.listen(port, () => {
+      console.log(`Servidor ejecutandose en http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error('No se pudo iniciar el servidor:', error.message);
+  }
+}
+
+iniciarServidor();
 
 module.exports = app;
