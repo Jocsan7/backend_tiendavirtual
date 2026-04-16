@@ -1,8 +1,50 @@
+const jwt = require('jsonwebtoken');
 const { tbc_usuario, tbc_carritos, Sequelize } = require('../models');
 
 const { Op } = Sequelize;
 
 module.exports = {
+  login(req, res) {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).send({
+        mensaje: 'Debes enviar email y password'
+      });
+    }
+
+    return tbc_usuario
+      .findOne({
+        where: {
+          email
+        }
+      })
+      .then((usuario) => {
+        if (!usuario || usuario.password !== password) {
+          return res.status(401).send({
+            mensaje: 'Credenciales incorrectas'
+          });
+        }
+
+        const token = jwt.sign(
+          {
+            id: usuario.id,
+            email: usuario.email,
+            rol: usuario.rol
+          },
+          process.env.JWT_SECRET || 'clave_practica_login',
+          {
+            expiresIn: '2h'
+          }
+        );
+
+        return res.status(200).send({
+          token
+        });
+      })
+      .catch((error) => res.status(400).send(error));
+  },
+
   create(req, res) {
     return tbc_usuario
       .create({

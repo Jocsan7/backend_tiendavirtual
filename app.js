@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
@@ -122,6 +124,7 @@ app.put('/categorias/:id', categoriaController.update);
 app.delete('/categorias/:id', categoriaController.delete);
 
 app.post('/usuarios', usuarioController.create);
+app.post('/login', usuarioController.login);
 app.get('/usuarios', usuarioController.list);
 app.get('/usuarios/buscar/:termino', usuarioController.find);
 app.get('/usuarios/:id', usuarioController.getById);
