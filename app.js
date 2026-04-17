@@ -5,6 +5,7 @@ const logger = require('morgan');
 const bodyParser = require('body-parser');
 const http = require('http');
 const mysql = require('mysql2/promise');
+const cors = require('cors');
 
 const categoriaController = require('./Controlers/controler_categoria');
 const usuarioController = require('./Controlers/controler_usuario');
@@ -22,6 +23,13 @@ const {
 const config = require('./config/config')[process.env.NODE_ENV || 'development'];
 
 const app = express();
+app.use(cors({
+  origin: 'http://localhost:8000', // Cambia esto si tu frontend se ejecuta en otro puerto o dominio
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+app.use(express.json());
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
